@@ -1,12 +1,14 @@
 import { RootNode } from './root.entity';
 import { ContentNode } from './content.entity.interface';
+import { Style } from '../style/style.entity';
 
 export class Page {
   constructor(
     public id: string,
     public title: string,
     public root: RootNode,
-    public siteId: string
+    public siteId: string,
+    public styles?: Style['properties']
   ) {}
 
   // Add getter for _id to maintain compatibility
@@ -26,6 +28,7 @@ export class Page {
       type: string;
     };
     siteId: string;
+    styles?: Style['properties'];
   }): Page {
     const id = json.id || json._id;
     if (!id) {
@@ -35,7 +38,8 @@ export class Page {
       id,
       json.title,
       RootNode.fromJSON(json.root),
-      json.siteId
+      json.siteId,
+      json.styles
     );
   }
 
@@ -50,12 +54,14 @@ export class Page {
       type: string;
     };
     siteId: string;
+    styles?: Style['properties'];
   } {
     return {
       _id: this.id, 
       title: this.title,
       root: this.root.toJSON(),
       siteId: this.siteId,
+      styles: this.styles
     };
   }
 }

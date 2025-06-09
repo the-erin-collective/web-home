@@ -38,12 +38,12 @@ export class PageLayoutService {
     this.backdropService.applyBackdrop(scene, siteContent.site.backdrop);
 
     // Conditionally create material based on site's backgroundType or borderType
-    if (siteContent.site.backgroundType === 'material' || siteContent.site.borderType === 'material') {
-      console.log(`RenderGrid: Creating scene material with type=${siteContent.site.materialType}, texture=${siteContent.site.materialTextureUrl} because backgroundType or borderType is 'material'.`);
+    if (siteContent.site.styles?.backgroundType === 'material' || siteContent.site.styles?.borderType === 'material') {
+      console.log(`RenderGrid: Creating scene material with type=${siteContent.site.styles?.materialType}, texture=${siteContent.site.styles?.materialTextureUrl} because backgroundType or borderType is 'material'.`);
       this.material = this.createMaterial(
         scene,
-        siteContent.site.materialType,
-        siteContent.site.materialTextureUrl
+        siteContent.site.styles?.materialType,
+        siteContent.site.styles?.materialTextureUrl
       );
     } else {
       console.log(`RenderGrid: Creating transparent scene material because backgroundType and borderType are not 'material'.`);
@@ -104,11 +104,11 @@ export class PageLayoutService {
       console.log(`Stored page ID in mesh metadata:`, hexMesh.metadata);
 
       // If site has a material border, create a separate border mesh
-      if (siteContent?.site?.borderType === 'material') {
+      if (siteContent?.site?.styles?.borderType === 'material') {
         const borderMaterial = this.createMaterial(
           scene,
-          siteContent.site.materialType,
-          siteContent.site.materialTextureUrl
+          siteContent.site.styles?.materialType,
+          siteContent.site.styles?.materialTextureUrl
         );
         // Create a slightly larger hex cylinder for the border
         const borderMesh = MeshBuilder.CreateCylinder(`hex_border_${hex.q}_${hex.r}_page_${page._id}`, {
@@ -125,7 +125,7 @@ export class PageLayoutService {
         console.log(`  Created material border for hex mesh: ${borderMesh.name}, Material Name: ${borderMaterial.name}`);
       }
       
-      const guiElements = await this.guiService.createGuiFromJson(page.root);
+      const guiElements = await this.guiService.createGuiFromJson(page.root, page.styles);
       if (guiElements) {
         // Store both preview and core content in the mesh's GUI
         this.guiService.attachGuiToMesh(hexMesh, guiElements);
@@ -177,11 +177,11 @@ export class PageLayoutService {
       mesh.position.z = (row - gridSize/2) * spacing;
 
       // If site has a material border, create a separate border mesh
-      if (siteContent?.site?.borderType === 'material') {
+      if (siteContent?.site?.styles?.borderType === 'material') {
         const borderMaterial = this.createMaterial(
           scene,
-          siteContent.site.materialType,
-          siteContent.site.materialTextureUrl
+          siteContent.site.styles?.materialType,
+          siteContent.site.styles?.materialTextureUrl
         );
         // Create a slightly larger box for the border
         const borderMesh = MeshBuilder.CreateBox(`box_border_${page.id}`, {
@@ -198,7 +198,7 @@ export class PageLayoutService {
         console.log(`  Created material border for grid mesh: ${borderMesh.name}, Material Name: ${borderMaterial.name}`);
       }
       
-      const guiElement = await this.guiService.createGuiFromJson(page.root);
+      const guiElement = await this.guiService.createGuiFromJson(page.root, page.styles);
       if (guiElement) {
         this.guiService.attachGuiToMesh(mesh, guiElement);
       }
@@ -233,11 +233,11 @@ export class PageLayoutService {
       mesh.position.z = i * spacing;
 
       // If site has a material border, create a separate border mesh
-      if (siteContent?.site?.borderType === 'material') {
+      if (siteContent?.site?.styles?.borderType === 'material') {
         const borderMaterial = this.createMaterial(
           scene,
-          siteContent.site.materialType,
-          siteContent.site.materialTextureUrl
+          siteContent.site.styles?.materialType,
+          siteContent.site.styles?.materialTextureUrl
         );
         // Create a slightly larger box for the border
         const borderMesh = MeshBuilder.CreateBox(`box_border_${page.id}`, {
@@ -254,7 +254,7 @@ export class PageLayoutService {
         console.log(`  Created material border for list mesh: ${borderMesh.name}, Material Name: ${borderMaterial.name}`);
       }
       
-      const guiElement = await this.guiService.createGuiFromJson(page.root);
+      const guiElement = await this.guiService.createGuiFromJson(page.root, page.styles);
       if (guiElement) {
         this.guiService.attachGuiToMesh(mesh, guiElement);
       }

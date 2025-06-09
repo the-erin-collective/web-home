@@ -1,5 +1,13 @@
 import { SiteBackdrop } from './backdrop.enum';
 import { SitemapType } from './sitemap-type.enum';
+import { Style } from '../style/style.entity';
+
+export interface SiteStyles {
+  backgroundType?: Style['properties']['backgroundType'];
+  materialType?: Style['properties']['materialType'];
+  materialTextureUrl?: Style['properties']['materialTextureUrl'];
+  borderType?: Style['properties']['borderType'];
+}
 
 export class Site {    constructor(
       public id: string,
@@ -9,10 +17,7 @@ export class Site {    constructor(
       public sitemapType: SitemapType = SitemapType.HEX_FLOWER,
       public defaultPage?: string,
       public backdrop?: string,
-      public backgroundType?: 'solid' | 'gradient' | 'image' | 'material',
-      public materialType?: string,
-      public materialTextureUrl?: string,
-      public borderType?: 'solid' | 'gradient' | 'material'
+      public styles?: SiteStyles
     ) {}
     static fromJSON(json: {
       id: string;
@@ -25,7 +30,15 @@ export class Site {    constructor(
       materialType?: string;
       materialTextureUrl?: string;
       borderType?: 'solid' | 'gradient' | 'material';
+      styles?: SiteStyles;
     }): Site {
+      const siteStyles: SiteStyles = {
+        backgroundType: json.backgroundType || json.styles?.backgroundType,
+        materialType: json.materialType || json.styles?.materialType,
+        materialTextureUrl: json.materialTextureUrl || json.styles?.materialTextureUrl,
+        borderType: json.borderType || json.styles?.borderType,
+      };
+
       return new Site(
         json.id,
         json.name,
@@ -34,10 +47,7 @@ export class Site {    constructor(
         json.sitemapType ?? SitemapType.HEX_FLOWER,
         json.defaultPage,
         json.backdrop,
-        json.backgroundType,
-        json.materialType,
-        json.materialTextureUrl,
-        json.borderType
+        siteStyles
       );
     }
   
@@ -50,10 +60,7 @@ export class Site {    constructor(
         sitemapType: this.sitemapType,
         defaultPage: this.defaultPage,
         backdrop: this.backdrop,
-        backgroundType: this.backgroundType,
-        materialType: this.materialType,
-        materialTextureUrl: this.materialTextureUrl,
-        borderType: this.borderType
+        styles: this.styles
       };
     }
   }

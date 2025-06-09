@@ -10,6 +10,7 @@ import { EmbeddableContainerNode } from 'src/domain/entities/page/content/embedd
 import { TextNode } from 'src/domain/entities/page/content/items/text.entity';
 import { StyleService } from 'src/integration/engine/render/style.service';
 import { StylesheetNode } from 'src/domain/entities/page/content/items/stylesheet.entity';
+import { Style } from 'src/domain/entities/style/style.entity';
 
 @Injectable({ providedIn: 'root' })
 export class GuiService {
@@ -60,7 +61,7 @@ export class GuiService {
     this.logControlHierarchy(guiElements.preview);
     this.logControlHierarchy(guiElements.core);
   }
-  async createGuiFromJson(node: ElementNode): Promise<{ preview: Control; core: Control } | null> {
+  async createGuiFromJson(node: ElementNode, pageStyles?: Style['properties']): Promise<{ preview: Control; core: Control } | null> {
     if (!node || !node.type || node.type !== 'root') {
       console.warn('Invalid root node:', node);
       return null;
@@ -82,8 +83,8 @@ export class GuiService {
     }
 
     // Create preview and core containers
-    const previewContainer = await this.createContainer(rootNode.preview);
-    const coreContainer = await this.createContainer(rootNode.core);
+    const previewContainer = await this.createContainer(rootNode.preview, pageStyles);
+    const coreContainer = await this.createContainer(rootNode.core, pageStyles);
     
     // Make a final pass to ensure text alignment consistency in both containers
     this.ensureConsistentTextAlignment(previewContainer);
@@ -237,7 +238,7 @@ export class GuiService {
         this.ensureConsistentTextAlignment(child);
       });
     }
-  }  private async createTextBlock(node: ElementNode, fontSize: number, fontWeight: string, parentPanelSize?: { width: number; height: number }): Promise<TextBlock> {
+  }  private async createTextBlock(node: ElementNode, fontSize: number, fontWeight: string, parentPanelSize?: { width: number; height: number }, inheritedStyles?: Style['properties']): Promise<TextBlock> {
     console.log(`Creating text block for type: ${node.type}`);
     const textBlock = new TextBlock(node.type);
     
@@ -254,7 +255,12 @@ export class GuiService {
     
     // Set parent chain for style inheritance
     const styleChain = this.styleService.getStyleChain(node, this.stylesheetMap);
-    this.styleService.applyStyles(textBlock, styleChain);
+    
+    // Prioritize inherited styles over stylesheet styles
+    const effectiveInheritedStyles: Style[] = inheritedStyles ? [{ _id: 'inherited-text-style', name: 'Inherited Text Style', properties: inheritedStyles }] : [];
+    const stylesToApply = [...effectiveInheritedStyles, ...styleChain];
+
+    this.styleService.applyStyles(textBlock, stylesToApply);
     
     // Different configuration based on text type
     if (node.type === 'h1') {
@@ -361,22 +367,30 @@ export class GuiService {
     return textBlock;
   }
 
-  private async createContainer(node: ElementNode): Promise<Rectangle> {
+  private async createContainer(node: ElementNode, inheritedStyles?: Style['properties']): Promise<Rectangle> {
     console.log(`Creating container for type: ${node.type}`);
     const rect = new Rectangle(node.type);
     rect.clipChildren = false; // Ensure children are never clipped
     
     // Set parent chain for style inheritance
     const styleChain = this.styleService.getStyleChain(node, this.stylesheetMap);
-    this.styleService.applyStyles(rect, styleChain);
+    
+    // Prioritize inherited styles over stylesheet styles
+    const effectiveInheritedStyles: Style[] = inheritedStyles ? [{ _id: 'inherited-container-style', name: 'Inherited Container Style', properties: inheritedStyles }] : [];
+    const stylesToApply = [...effectiveInheritedStyles, ...styleChain];
+
+    this.styleService.applyStyles(rect, stylesToApply);
     
     // If the node's style has a material background or border, make the GUI rectangle transparent
-    const nodeStyle = styleChain.find(s => s._id === node._id); // Get the specific style for this node
-    if (nodeStyle) {
-      if (nodeStyle.properties?.backgroundType === 'material' || nodeStyle.properties?.borderType === 'material') {
-        rect.background = "transparent";
-        console.log(`Container ${node.type} set to transparent background due to material type.`);
-      }
+    // We need to re-evaluate the merged properties to check for material type.
+    const mergedProps: Style['properties'] = {};
+    for (const style of stylesToApply) {
+      Object.assign(mergedProps, style.properties);
+    }
+
+    if (mergedProps.backgroundType === 'material' || mergedProps.borderType === 'material') {
+      rect.background = "transparent";
+      console.log(`Container ${node.type} set to transparent background due to material type.`);
     }
 
     // Determine pixel width for this container
@@ -436,7 +450,8 @@ export class GuiService {
             textNode,
             fontSize,
             textNode.type === 'h1' ? 'bold' : 'normal',
-            { width: spWidth - 20, height: 0 }
+            { width: spWidth - 20, height: 0 },
+            mergedProps // Pass merged properties as inherited styles
           );
           
           // Center text within the StackPanel
@@ -463,7 +478,7 @@ export class GuiService {
       for (const childNode of otherNodes) {
         let childControl: Control | null = null;
         if (childNode.type === 'container' || childNode.type === 'panel') {
-          childControl = await this.createContainer(childNode);
+          childControl = await this.createContainer(childNode, mergedProps); // Pass merged properties
         }
         if (childControl) {
           rect.addControl(childControl);

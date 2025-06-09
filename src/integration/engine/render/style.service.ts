@@ -247,7 +247,7 @@ export class StyleService {
         }
         break;
       case 'image':
-        const imageUrl = props.backgroundImageUrl || 'src/presentation/assets/images/image-background.txt';
+        const imageUrl = props.backgroundImageUrl || 'src/presentation/assets/images/image-background.png';
         // Apply image background to Rectangle. This might require creating an Image control
         // and setting it as a background, or using AdvancedDynamicTexture.CreateForMesh
         // if this is a mesh-attached GUI.
@@ -255,7 +255,7 @@ export class StyleService {
           // In Babylon.js GUI, setting an image background for a Rectangle directly isn't straightforward.
           // A common approach is to create an Image control and add it as a child behind other elements.
           // For simplicity, we'll log for now.
-          console.warn(`  Image background is not directly supported by BabylonJS GUI Rectangle control. Falling back to solid color.`);
+          console.warn(`  Image background is not directly supported by BabylonJS GUI Rectangle control. Falling back to transparent.`);
           control.background = 'transparent'; // Fallback to transparent
         } else {
           console.warn(`  Image background is only applicable to Rectangle controls. Skipping for ${control.constructor.name}.`);

@@ -53,8 +53,23 @@ export class PlatformComponent implements OnChanges {
     }
 
     if (changes['siteContent'] && changes['siteContent'].currentValue) {
-      this.siteContent.site.backgroundType = 'material'; 
-      this.siteContent.site.materialType = 'wood';
+      // Initialize the styles object if it doesn't exist
+      if (!this.siteContent.site.styles) {
+        this.siteContent.site.styles = {};
+      }
+      this.siteContent.site.styles.backgroundType = 'material'; 
+      this.siteContent.site.styles.materialType = 'wood';
+      
+      this.siteContent.pages.forEach(page => {
+        console.log('page styles:', page.styles);
+        // Initialize the styles object on each page if it doesn't exist
+        if (!page.styles) {
+          page.styles = {};
+        }
+        page.styles.backgroundType = 'material';
+        page.styles.materialType = 'wood';
+      });
+
       console.log('EngineComponent - Received site content:', this.siteContent);
       // Perform any logic with the site content here
     }
