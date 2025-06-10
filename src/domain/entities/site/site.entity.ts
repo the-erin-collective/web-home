@@ -26,17 +26,13 @@ export class Site {    constructor(
       pageOrder?: string[];      sitemapType?: SitemapType;
       defaultPage?: string;
       backdrop?: string;
-      backgroundType?: 'solid' | 'gradient' | 'image' | 'material';
-      materialType?: string;
-      materialTextureUrl?: string;
-      borderType?: 'solid' | 'gradient' | 'material';
       styles?: SiteStyles;
     }): Site {
       const siteStyles: SiteStyles = {
-        backgroundType: json.backgroundType || json.styles?.backgroundType,
-        materialType: json.materialType || json.styles?.materialType,
-        materialTextureUrl: json.materialTextureUrl || json.styles?.materialTextureUrl,
-        borderType: json.borderType || json.styles?.borderType,
+        backgroundType: json.styles?.backgroundType,
+        materialType: json.styles?.materialType,
+        materialTextureUrl: json.styles?.materialTextureUrl,
+        borderType: json.styles?.borderType,
       };
 
       return new Site(

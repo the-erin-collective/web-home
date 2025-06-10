@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Scene, MeshBuilder, Mesh, StandardMaterial, Texture, ArcRotateCamera, HemisphericLight, Vector3 } from '@babylonjs/core';
+import { Scene, MeshBuilder, Mesh, StandardMaterial, Texture, ArcRotateCamera, HemisphericLight, Vector3, DirectionalLight, Color3 } from '@babylonjs/core';
 import * as honeycomb from 'honeycomb-grid';
 import { SiteContent } from '../../models/site-content.aggregate.model';
 import { Page } from 'src/domain/entities/page/page.entity';
@@ -30,12 +30,21 @@ export class PageLayoutService {
       return;
     }
 
-    // Add a hemispheric light to the scene
-    new HemisphericLight('light', new Vector3(0, 1, 0), scene);
+    // Add lights to the scene
+    const hemiLight = new HemisphericLight('light', new Vector3(0, 1, 0), scene);
+    hemiLight.intensity = 1.0; // Increased intensity
     console.log('Added HemisphericLight to the scene.');
+
+    // Add a DirectionalLight for better material illumination
+    const dirLight = new DirectionalLight("dirLight", new Vector3(0, -1, 1), scene);
+    dirLight.intensity = 1.5; // Increased intensity
+    console.log('Added DirectionalLight to the scene.');
 
     // Apply the site backdrop
     this.backdropService.applyBackdrop(scene, siteContent.site.backdrop);
+
+    // Show Babylon.js Debug Layer
+    scene.debugLayer.show();
 
     // Conditionally create material based on site's backgroundType or borderType
     if (siteContent.site.styles?.backgroundType === 'material' || siteContent.site.styles?.borderType === 'material') {
@@ -45,11 +54,13 @@ export class PageLayoutService {
         siteContent.site.styles?.materialType,
         siteContent.site.styles?.materialTextureUrl
       );
+      console.log(`  Scene material created: Name=${this.material.name}, Alpha=${this.material.alpha}, DiffuseColor=${this.material.diffuseColor}, EmissiveColor=${this.material.emissiveColor}, HasDiffuseTexture=${!!this.material.diffuseTexture}, DiffuseTextureName=${this.material.diffuseTexture?.name}`);
     } else {
       console.log(`RenderGrid: Creating transparent scene material because backgroundType and borderType are not 'material'.`);
       this.material = new StandardMaterial('transparent_surface', scene);
       this.material.alpha = 0; // Make it fully transparent
       this.material.diffuseTexture = null; // Ensure no texture is applied
+      console.log(`  Transparent scene material created: Name=${this.material.name}, Alpha=${this.material.alpha}`);
     }
     
     this.guiService.initializeGui(scene);
@@ -99,6 +110,12 @@ export class PageLayoutService {
       
       const hexMesh = this.createHexMesh(hex, scene, this.material, page._id);
       
+      // Log material properties after assignment to mesh
+      if (hexMesh.material) {
+        const m = hexMesh.material as StandardMaterial;
+        console.log(`  Hex mesh material after assignment: Name=${m.name}, Alpha=${m.alpha}, DiffuseColor=${m.diffuseColor}, EmissiveColor=${m.emissiveColor}, HasDiffuseTexture=${!!m.diffuseTexture}, DiffuseTextureName=${m.diffuseTexture?.name}`);
+      }
+
       // Store the page ID in the mesh metadata
       hexMesh.metadata = { pageId: page._id };
       console.log(`Stored page ID in mesh metadata:`, hexMesh.metadata);
@@ -166,13 +183,18 @@ export class PageLayoutService {
       const col = i % gridSize;
       
       const mesh = MeshBuilder.CreateBox(`page_${page.id}`, {
-        height: 0.5, // Increased height for better visibility
+        height: 2.0, // Increased height for better visibility
         width: 60,
         depth: 60
       }, scene);
       
       mesh.material = this.material;
       console.log(`  Applying material to grid mesh: ${mesh.name}, Material Name: ${this.material.name}, Has Diffuse Texture: ${!!this.material.diffuseTexture}`);
+      // Log material properties after assignment to mesh
+      if (mesh.material) {
+        const m = mesh.material as StandardMaterial;
+        console.log(`  Grid mesh material after assignment: Name=${m.name}, Alpha=${m.alpha}, DiffuseColor=${m.diffuseColor}, EmissiveColor=${m.emissiveColor}, HasDiffuseTexture=${!!m.diffuseTexture}, DiffuseTextureName=${m.diffuseTexture?.name}`);
+      }
       mesh.position.x = (col - gridSize/2) * spacing;
       mesh.position.z = (row - gridSize/2) * spacing;
 
@@ -222,13 +244,18 @@ export class PageLayoutService {
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const mesh = MeshBuilder.CreateBox(`page_${page.id}`, {
-        height: 0.5, // Increased height for better visibility
+        height: 2.0, // Increased height for better visibility
         width: 60,
         depth: 60
       }, scene);
       
       mesh.material = this.material;
       console.log(`  Applying material to list mesh: ${mesh.name}, Material Name: ${this.material.name}, Has Diffuse Texture: ${!!this.material.diffuseTexture}`);
+      // Log material properties after assignment to mesh
+      if (mesh.material) {
+        const m = mesh.material as StandardMaterial;
+        console.log(`  List mesh material after assignment: Name=${m.name}, Alpha=${m.alpha}, DiffuseColor=${m.diffuseColor}, EmissiveColor=${m.emissiveColor}, HasDiffuseTexture=${!!m.diffuseTexture}, DiffuseTextureName=${m.diffuseTexture?.name}`);
+      }
       mesh.position.x = 0;
       mesh.position.z = i * spacing;
 
@@ -302,7 +329,7 @@ export class PageLayoutService {
     
     const hexMesh = MeshBuilder.CreateCylinder(meshName, {
       diameter: 60.0, 
-      height: 0.5, // Increased height for better visibility
+      height: 2.0, // Increased height for better visibility
       tessellation: 6,
     }, scene);
 
@@ -311,6 +338,12 @@ export class PageLayoutService {
     hexMesh.position.x = hex.x;
     hexMesh.position.z = hex.y;
     hexMesh.position.y = 0;
+
+    // Log material properties after assignment to mesh
+    if (hexMesh.material) {
+      const m = hexMesh.material as StandardMaterial;
+      console.log(`  Hex mesh material after assignment: Name=${m.name}, Alpha=${m.alpha}, DiffuseColor=${m.diffuseColor}, EmissiveColor=${m.emissiveColor}, HasDiffuseTexture=${!!m.diffuseTexture}, DiffuseTextureName=${m.diffuseTexture?.name}`);
+    }
 
     // Store the page ID in the mesh metadata
     hexMesh.metadata = { pageId };
@@ -323,6 +356,14 @@ export class PageLayoutService {
     console.log(`Creating material: type=${materialType}, texture=${materialTextureUrl}`);
     const material = new StandardMaterial('hex_surface', scene);
     material.specularPower = 50; // Reduced specular power for better texture visibility
+    material.alpha = 1; // Ensure material is fully opaque
+    material.diffuseColor = new Color3(1, 1, 1); // Set diffuse color to white to avoid tinting
+
+    // Add emissive color for debugging visibility regardless of lighting
+    material.emissiveColor = new Color3(0, 0, 0); // Reset emissive color
+    // Disable back-face culling to ensure both sides are rendered
+    material.backFaceCulling = false;
+    material.useAlphaFromDiffuseTexture = false; // Ensure material does not use alpha from diffuse texture
 
     let effectiveMaterialType = materialType || 'concrete'; // Default to 'concrete'
     let effectiveTextureUrl = materialTextureUrl; // Start with provided texture URL
@@ -348,7 +389,8 @@ export class PageLayoutService {
       console.warn(`  No effective texture URL determined. Defaulting to light-concrete.jpg.`);
     }
 
-    material.diffuseTexture = new Texture(effectiveTextureUrl, scene);
+    material.diffuseTexture = new Texture(effectiveTextureUrl, scene); // Re-enable texture assignment
+    material.diffuseTexture.hasAlpha = false; // Explicitly ensure texture does not use alpha
     console.log(`  Final material properties: Effective Type=${effectiveMaterialType}, Effective Texture URL=${effectiveTextureUrl}, Diffuse Texture Set: ${!!material.diffuseTexture}`);
     return material;
   }

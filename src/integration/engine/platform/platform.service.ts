@@ -28,9 +28,9 @@ export class PlatformService {
     // Create the camera
     this.camera = new ArcRotateCamera(
       'camera1',
-      180,
-      0,
-      200,
+      Math.PI / 2,
+      Math.PI / 4,
+      100,
       new Vector3(0, 5, -10),
       this.scene
     );

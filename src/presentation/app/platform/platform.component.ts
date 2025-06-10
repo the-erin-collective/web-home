@@ -71,7 +71,6 @@ export class PlatformComponent implements OnChanges {
       });
 
       console.log('EngineComponent - Received site content:', this.siteContent);
-      // Perform any logic with the site content here
     }
   }
 

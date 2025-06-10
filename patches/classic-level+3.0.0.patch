@@ -1,9 +1,7 @@
 diff --git a/node_modules/classic-level/binding.js b/node_modules/classic-level/binding.js
-index 7eb1934..ffd9386 100644
+index ffd9386..11f662b 100644
 --- a/node_modules/classic-level/binding.js
 +++ b/node_modules/classic-level/binding.js
-@@ -1 +1,2 @@
+@@ -1 +1 @@
 -module.exports = require('node-gyp-build')(__dirname)
-+// Use process.cwd() instead of __dirname as a fallback when __dirname is not available
 +module.exports = require('node-gyp-build')(typeof __dirname !== 'undefined' ? __dirname : process.cwd() + '/node_modules/classic-level')
- 

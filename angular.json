@@ -72,13 +72,30 @@
                   "maximumWarning": "10kb",
                   "maximumError": "15kb"
                 }
+              ],
+              "scripts": [],
+              "assets": [
+                "src/presentation/assets",
+                "src/presentation/favicon.ico"
               ]
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
-              "namedChunks": true
+              "namedChunks": true,
+              "scripts": [
+                "src/integration/libraries/babylon.inspector.bundle.js"
+              ],
+              "assets": [
+                "src/presentation/assets",
+                "src/presentation/favicon.ico",
+                {
+                  "glob": "babylon.inspector.bundle.js",
+                  "input": "src/integration/libraries",
+                  "output": "/"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"

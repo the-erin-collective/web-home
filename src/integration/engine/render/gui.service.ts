@@ -22,6 +22,7 @@ export class GuiService {
 
   initializeGui(scene: Scene): void {
     this.guiTexture = AdvancedDynamicTexture.CreateFullscreenUI('UI', true, scene);
+    console.log('GUI initialization completed.');
   }
 
   attachGuiToMesh(mesh: Mesh, guiElements: { preview: Control; core: Control }): void {
@@ -45,10 +46,6 @@ export class GuiService {
     // Set initial states
     guiElements.preview.alpha = 1;
     guiElements.core.alpha = 0;
-    
-    // Ensure both controls are visible but with different alpha
-    guiElements.preview.isVisible = true;
-    guiElements.core.isVisible = true;
     
     // Add both controls to the texture
     advancedTexture.addControl(guiElements.preview);
@@ -144,7 +141,9 @@ export class GuiService {
       
       // Start animations
       const scene = mesh.getScene();
-      scene.beginAnimation(guiElements.preview, 0, 30);
+      scene.beginAnimation(guiElements.preview, 0, 30, false, undefined, () => {
+        guiElements.preview.isVisible = false; // Hide preview after fade out
+      });
       scene.beginAnimation(guiElements.core, 0, 30);
     }
   }
@@ -152,6 +151,9 @@ export class GuiService {
   showPreviewContent(mesh: Mesh): void {
     const guiElements = this.meshGuiMap.get(mesh.name);
     if (guiElements) {
+      // Ensure preview is visible before fading in
+      guiElements.preview.isVisible = true;
+
       // Create animations for both controls
       const previewAnimation = new Animation(
         "previewFade",
@@ -187,7 +189,10 @@ export class GuiService {
       // Start animations
       const scene = mesh.getScene();
       scene.beginAnimation(guiElements.preview, 0, 30);
-      scene.beginAnimation(guiElements.core, 0, 30);    }
+      scene.beginAnimation(guiElements.core, 0, 30, false, undefined, () => {
+        guiElements.core.isVisible = false; // Hide core after fade out
+      });
+    }
   }
     // Helper to compute effective style by walking up the site data tree (root-to-leaf order), handling 'inherit' by propagating parent value
   private computeEffectiveStyle(node: ElementNode, stylesheetMap: Map<string, any>): any {
@@ -241,9 +246,12 @@ export class GuiService {
   }  private async createTextBlock(node: ElementNode, fontSize: number, fontWeight: string, parentPanelSize?: { width: number; height: number }, inheritedStyles?: Style['properties']): Promise<TextBlock> {
     console.log(`Creating text block for type: ${node.type}`);
     const textBlock = new TextBlock(node.type);
+    console.log(`  TextBlock initial properties for ${node.type}: color='${textBlock.color}', alpha=${textBlock.alpha}'`);
     
     // Ensure text is never clipped by its container
     textBlock.clipContent = false;
+    textBlock.color = 'black'; // Explicitly set text color
+    textBlock.alpha = 1; // Explicitly set text opacity
     
     // Set content first so we can calculate sizes based on content
     if ('text' in node && typeof node.text === 'string') {
@@ -370,7 +378,13 @@ export class GuiService {
   private async createContainer(node: ElementNode, inheritedStyles?: Style['properties']): Promise<Rectangle> {
     console.log(`Creating container for type: ${node.type}`);
     const rect = new Rectangle(node.type);
-    rect.clipChildren = false; // Ensure children are never clipped
+    // Explicitly set initial properties to transparent/no border to prevent visual artifacts
+    rect.background = "transparent"; // Ensure no default background
+    rect.alpha = 1; // Start fully opaque for the control itself
+    rect.thickness = 0; // Ensure no default border
+    rect.color = 'transparent'; // Ensure no default border color
+
+    console.log(`  Rectangle initial properties for ${node.type}: background='${rect.background}', alpha=${rect.alpha}, thickness=${rect.thickness}, color='${rect.color}'`);
     
     // Set parent chain for style inheritance
     const styleChain = this.styleService.getStyleChain(node, this.stylesheetMap);
@@ -390,7 +404,12 @@ export class GuiService {
 
     if (mergedProps.backgroundType === 'material' || mergedProps.borderType === 'material') {
       rect.background = "transparent";
-      console.log(`Container ${node.type} set to transparent background due to material type.`);
+      console.log(`Container ${node.type} set to transparent background due to material type. Current background: ${rect.background}, alpha: ${rect.alpha}`);
+    } else {
+      // Ensure non-material backgrounds are explicitly set if not handled by style service
+      rect.background = 'transparent'; // Default to transparent if not material
+      rect.alpha = 1; // Ensure container is fully opaque unless specified otherwise
+      console.log(`Container ${node.type} set to transparent background. Current background: ${rect.background}, alpha: ${rect.alpha}`);
     }
 
     // Determine pixel width for this container
